@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Microphone Playback with Reverb</title>
+    <title>Live Microphone Playback with Reverb & Noise Filtering</title>
 </head>
 <body>
     <h2>Live Microphone Playback</h2>
@@ -16,10 +16,10 @@
         let stream;
         let convolver;
         let reverbEnabled = false;
-        let dryGain, wetGain;
+        let dryGain, wetGain, highPassFilter, noiseGate;
 
         function createImpulseResponse(audioContext) {
-            let length = audioContext.sampleRate * 2.0; // 2 seconds
+            let length = audioContext.sampleRate * 1.5; // Shorter reverb buffer for less latency
             let impulse = audioContext.createBuffer(2, length, audioContext.sampleRate);
             let left = impulse.getChannelData(0);
             let right = impulse.getChannelData(1);
@@ -32,8 +32,8 @@
 
         document.getElementById('start').addEventListener('click', async () => {
             try {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+                stream = await navigator.mediaDevices.getUserMedia({ audio: { latency: 0 } });
                 microphone = audioContext.createMediaStreamSource(stream);
                 convolver = audioContext.createConvolver();
                 convolver.buffer = createImpulseResponse(audioContext);
@@ -42,9 +42,25 @@
                 wetGain = audioContext.createGain();
                 wetGain.gain.value = 0; // Start with reverb off
 
-                microphone.connect(dryGain);
+                // Adjusted high-pass filter to remove low-frequency noise but keep voice clarity
+                highPassFilter = audioContext.createBiquadFilter();
+                highPassFilter.type = "highpass";
+                highPassFilter.frequency.value = 80; // Allow more low frequencies for voice clarity
+
+                // Adjusted noise gate for minimal delay
+                noiseGate = audioContext.createDynamicsCompressor();
+                noiseGate.threshold.value = -55; // Less aggressive threshold
+                noiseGate.knee.value = 30;
+                noiseGate.ratio.value = 4;
+                noiseGate.attack.value = 0.02; // Faster attack to reduce delay
+                noiseGate.release.value = 0.05; // Faster release for real-time response
+
+                // Connect nodes
+                microphone.connect(highPassFilter);
+                highPassFilter.connect(noiseGate);
+                noiseGate.connect(dryGain);
                 dryGain.connect(audioContext.destination);
-                microphone.connect(convolver);
+                noiseGate.connect(convolver);
                 convolver.connect(wetGain);
                 wetGain.connect(audioContext.destination);
                 
