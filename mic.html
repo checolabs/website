@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Microphone Playback with Reverb & Noise Filtering</title>
+</head>
+<body>
+    <h2>Live Microphone Playback</h2>
+    <button id="start">Start</button>
+    <button id="stop" disabled>Stop</button>
+    <button id="toggleReverb" disabled>Toggle Reverb</button>
+    <script>
+        let audioContext;
+        let microphone;
+        let stream;
+        let convolver;
+        let reverbEnabled = false;
+        let dryGain, wetGain, highPassFilter, noiseGate;
+
+        function createImpulseResponse(audioContext) {
+            let length = audioContext.sampleRate * 1.2; // Shorter reverb buffer for minimal latency
+            let impulse = audioContext.createBuffer(2, length, audioContext.sampleRate);
+            let left = impulse.getChannelData(0);
+            let right = impulse.getChannelData(1);
+            for (let i = 0; i < length; i++) {
+                left[i] = (Math.random() * 2 - 1) * (1 - i / length);
+                right[i] = (Math.random() * 2 - 1) * (1 - i / length);
+            }
+            return impulse;
+        }
+
+        document.getElementById('start').addEventListener('click', async () => {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'playback' });
+                stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false } });
+                microphone = audioContext.createMediaStreamSource(stream);
+                convolver = audioContext.createConvolver();
+                convolver.buffer = createImpulseResponse(audioContext);
+                
+                dryGain = audioContext.createGain();
+                wetGain = audioContext.createGain();
+                wetGain.gain.value = 0; // Start with reverb off
+
+                highPassFilter = audioContext.createBiquadFilter();
+                highPassFilter.type = "highpass";
+                highPassFilter.frequency.value = 80; // Slightly higher to reduce low-frequency feedback
+                
+                noiseGate = audioContext.createDynamicsCompressor();
+                noiseGate.threshold.setValueAtTime(-50, audioContext.currentTime); // Aggressive noise gate
+                noiseGate.knee.setValueAtTime(40, audioContext.currentTime);
+                noiseGate.ratio.setValueAtTime(12, audioContext.currentTime);
+                noiseGate.attack.setValueAtTime(0.003, audioContext.currentTime);
+                noiseGate.release.setValueAtTime(0.25, audioContext.currentTime);
+                
+                // Connect nodes for minimal latency and feedback reduction
+                microphone.connect(highPassFilter);
+                highPassFilter.connect(noiseGate);
+                noiseGate.connect(dryGain);
+                dryGain.connect(audioContext.destination);
+                noiseGate.connect(convolver);
+                convolver.connect(wetGain);
+                wetGain.connect(audioContext.destination);
+                
+                document.getElementById('start').disabled = true;
+                document.getElementById('stop').disabled = false;
+                document.getElementById('toggleReverb').disabled = false;
+            } catch (error) {
+                console.error('Error accessing microphone:', error);
+            }
+        });
+
+        document.getElementById('stop').addEventListener('click', () => {
+            if (microphone) {
+                microphone.disconnect();
+            }
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            if (audioContext) {
+                audioContext.close();
+            }
+            document.getElementById('start').disabled = false;
+            document.getElementById('stop').disabled = true;
+            document.getElementById('toggleReverb').disabled = true;
+        });
+
+        document.getElementById('toggleReverb').addEventListener('click', () => {
+            if (!reverbEnabled) {
+                wetGain.gain.value = 1.0; // Enable reverb
+                dryGain.gain.value = 0.5;
+            } else {
+                wetGain.gain.value = 0; // Disable reverb
+                dryGain.gain.value = 1.0;
+            }
+            reverbEnabled = !reverbEnabled;
+        });
+    </script>
+</body>
+</html>
