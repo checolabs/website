@@ -1,102 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Microphone Playback with Reverb & Noise Filtering</title>
-</head>
-<body>
-    <h2>Live Microphone Playback</h2>
-    <button id="start">Start</button>
-    <button id="stop" disabled>Stop</button>
-    <button id="toggleReverb" disabled>Toggle Reverb</button>
-    <script>
-        let audioContext;
-        let microphone;
-        let stream;
-        let convolver;
-        let reverbEnabled = false;
-        let dryGain, wetGain, highPassFilter, noiseGate;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Mic with Reverb</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background-color: #222;
+        color: white;
+        margin: 0;
+        padding: 40px;
+      }
 
-        function createImpulseResponse(audioContext) {
-            let length = audioContext.sampleRate * 1.5; // Shorter reverb buffer for less latency
-            let impulse = audioContext.createBuffer(2, length, audioContext.sampleRate);
-            let left = impulse.getChannelData(0);
-            let right = impulse.getChannelData(1);
-            for (let i = 0; i < length; i++) {
-                left[i] = (Math.random() * 2 - 1) * (1 - i / length);
-                right[i] = (Math.random() * 2 - 1) * (1 - i / length);
-            }
-            return impulse;
+      .mic-button {
+        background-color: red;
+        border: none;
+        padding: 20px;
+        font-size: 2rem;
+        border-radius: 50%;
+        color: white;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      .mic-icon {
+        width: 40px;
+      }
+
+      .mic-button.active {
+        background-color: green;
+      }
+
+      .knob-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px;
+      }
+
+      .knob {
+        width: 60px;
+        height: 60px;
+        background: radial-gradient(circle, #666, #333);
+        border-radius: 50%;
+        position: relative;
+        cursor: grab;
+      }
+
+      .knob::before {
+        content: "";
+        width: 8px;
+        height: 20px;
+        background: white;
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 4px;
+      }
+
+      label {
+        font-size: 1.2rem;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>KARAOKE MICROPHONE</h1>
+
+    <button id="micToggle" class="mic-button">
+      <i class="fas fa-microphone mic-icon"></i>
+    </button>
+
+    <div class="knob-container">
+      <div class="knob" id="reverbKnob"></div>
+      <label>REVERB</label>
+    </div>
+
+    <script>
+      let audioContext, micStream, convolver, noiseGateNode, dryGain, wetGain;
+      let micActive = false;
+
+      function createImpulseResponse(audioContext) {
+        const length = audioContext.sampleRate * 2.5; // 2.5 sec reverb
+        const impulse = audioContext.createBuffer(
+          2,
+          length,
+          audioContext.sampleRate
+        );
+        const left = impulse.getChannelData(0);
+        const right = impulse.getChannelData(1);
+
+        for (let i = 0; i < length; i++) {
+          left[i] = (Math.random() * 2 - 1) * (1 - i / length);
+          right[i] = (Math.random() * 2 - 1) * (1 - i / length);
         }
 
-        document.getElementById('start').addEventListener('click', async () => {
+        return impulse;
+      }
+
+      document
+        .getElementById("micToggle")
+        .addEventListener("click", async () => {
+          if (!micActive) {
             try {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
-                stream = await navigator.mediaDevices.getUserMedia({ audio: { latency: 0 } });
-                microphone = audioContext.createMediaStreamSource(stream);
-                convolver = audioContext.createConvolver();
-                convolver.buffer = createImpulseResponse(audioContext);
-                
-                dryGain = audioContext.createGain();
-                wetGain = audioContext.createGain();
-                wetGain.gain.value = 0; // Start with reverb off
+              // Get microphone input (disable aggressive filters)
+              const stream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                  echoCancellation: false,
+                  noiseSuppression: false,
+                  autoGainControl: false,
+                },
+              });
+              audioContext = new AudioContext();
+              const source = audioContext.createMediaStreamSource(stream);
 
-                // Adjusted high-pass filter to remove low-frequency noise but keep voice clarity
-                highPassFilter = audioContext.createBiquadFilter();
-                highPassFilter.type = "highpass";
-                highPassFilter.frequency.value = 80; // Allow more low frequencies for voice clarity
+              noiseGateNode = audioContext.createDynamicsCompressor();
+              noiseGateNode.threshold.value = -40;
+              noiseGateNode.knee.value = 10;
+              noiseGateNode.ratio.value = 12;
+              noiseGateNode.attack.value = 0.03;
+              noiseGateNode.release.value = 0.25;
 
-                // Adjusted noise gate for minimal delay
-                noiseGate = audioContext.createDynamicsCompressor();
-                noiseGate.threshold.value = -55; // Less aggressive threshold
-                noiseGate.knee.value = 30;
-                noiseGate.ratio.value = 4;
-                noiseGate.attack.value = 0.02; // Faster attack to reduce delay
-                noiseGate.release.value = 0.05; // Faster release for real-time response
+              convolver = audioContext.createConvolver();
+              convolver.buffer = createImpulseResponse(audioContext);
 
-                // Connect nodes
-                microphone.connect(highPassFilter);
-                highPassFilter.connect(noiseGate);
-                noiseGate.connect(dryGain);
-                dryGain.connect(audioContext.destination);
-                noiseGate.connect(convolver);
-                convolver.connect(wetGain);
-                wetGain.connect(audioContext.destination);
-                
-                document.getElementById('start').disabled = true;
-                document.getElementById('stop').disabled = false;
-                document.getElementById('toggleReverb').disabled = false;
+              dryGain = audioContext.createGain();
+              wetGain = audioContext.createGain();
+              wetGain.gain.value = 0.5;
+
+              source.connect(noiseGateNode);
+              noiseGateNode.connect(dryGain);
+              noiseGateNode.connect(convolver);
+              convolver.connect(wetGain);
+
+              dryGain.connect(audioContext.destination);
+              wetGain.connect(audioContext.destination);
+
+              micStream = stream;
+              micActive = true;
+              document.getElementById("micToggle").classList.add("active");
             } catch (error) {
-                console.error('Error accessing microphone:', error);
+              console.error("Error accessing microphone:", error);
             }
-        });
-
-        document.getElementById('stop').addEventListener('click', () => {
-            if (microphone) {
-                microphone.disconnect();
-            }
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
+          } else {
+            if (micStream) {
+              micStream.getTracks().forEach((track) => track.stop());
             }
             if (audioContext) {
-                audioContext.close();
+              audioContext.close();
             }
-            document.getElementById('start').disabled = false;
-            document.getElementById('stop').disabled = true;
-            document.getElementById('toggleReverb').disabled = true;
+            micActive = false;
+            document.getElementById("micToggle").classList.remove("active");
+          }
         });
 
-        document.getElementById('toggleReverb').addEventListener('click', () => {
-            if (!reverbEnabled) {
-                wetGain.gain.value = 1.0; // Enable reverb
-                dryGain.gain.value = 0.5;
-            } else {
-                wetGain.gain.value = 0; // Disable reverb
-                dryGain.gain.value = 1.0;
-            }
-            reverbEnabled = !reverbEnabled;
-        });
+      // Rotary knob logic
+      let knob = document.getElementById("reverbKnob");
+      let reverbValue = 0.5;
+      let isDragging = false;
+
+      knob.addEventListener("mousedown", (e) => {
+        isDragging = true;
+      });
+
+      document.addEventListener("mouseup", () => {
+        isDragging = false;
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (isDragging) {
+          let newValue = Math.max(
+            0,
+            Math.min(1, reverbValue + e.movementY * -0.005)
+          );
+          reverbValue = newValue;
+          knob.style.transform = `rotate(${reverbValue * 270 - 135}deg)`;
+          if (wetGain) wetGain.gain.value = reverbValue;
+        }
+      });
     </script>
-</body>
+  </body>
 </html>
