@@ -37,37 +37,8 @@
         background-color: green;
       }
 
-      .knob-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-top: 20px;
-      }
-
-      .knob {
-        width: 60px;
-        height: 60px;
-        background: radial-gradient(circle, #666, #333);
-        border-radius: 50%;
-        position: relative;
-        cursor: grab;
-      }
-
-      .knob::before {
-        content: "";
-        width: 8px;
-        height: 20px;
-        background: white;
-        position: absolute;
-        top: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        border-radius: 4px;
-      }
-
-      label {
-        font-size: 1.2rem;
-        margin-top: 10px;
+      .reverb-text {
+        font-size: xx-small;
       }
     </style>
   </head>
@@ -77,15 +48,16 @@
     <button id="micToggle" class="mic-button">
       <i class="fas fa-microphone mic-icon"></i>
     </button>
-
-    <div class="knob-container">
-      <div class="knob" id="reverbKnob"></div>
-      <label>REVERB</label>
-    </div>
+    <br />
+    <br />
+    <button id="reverbToggle" class="mic-button">
+      <p class="reverb-text">REVERB</p>
+    </button>
 
     <script>
       let audioContext, micStream, convolver, noiseGateNode, dryGain, wetGain;
       let micActive = false;
+      let reverbActive = false;
 
       function createImpulseResponse(audioContext) {
         const length = audioContext.sampleRate * 2.5; // 2.5 sec reverb
@@ -118,7 +90,8 @@
                   autoGainControl: false,
                 },
               });
-              audioContext = new AudioContext();
+              audioContext = new (window.AudioContext ||
+                window.webkitAudioContext)();
               const source = audioContext.createMediaStreamSource(stream);
 
               noiseGateNode = audioContext.createDynamicsCompressor();
@@ -133,7 +106,7 @@
 
               dryGain = audioContext.createGain();
               wetGain = audioContext.createGain();
-              wetGain.gain.value = 0.5;
+              wetGain.gain.value = 0;
 
               source.connect(noiseGateNode);
               noiseGateNode.connect(dryGain);
@@ -158,33 +131,28 @@
             }
             micActive = false;
             document.getElementById("micToggle").classList.remove("active");
+            reverbActive = false;
+            document.getElementById("reverbToggle").classList.remove("active");
           }
         });
 
-      // Rotary knob logic
-      let knob = document.getElementById("reverbKnob");
-      let reverbValue = 0.5;
-      let isDragging = false;
-
-      knob.addEventListener("mousedown", (e) => {
-        isDragging = true;
-      });
-
-      document.addEventListener("mouseup", () => {
-        isDragging = false;
-      });
-
-      document.addEventListener("mousemove", (e) => {
-        if (isDragging) {
-          let newValue = Math.max(
-            0,
-            Math.min(1, reverbValue + e.movementY * -0.005)
-          );
-          reverbValue = newValue;
-          knob.style.transform = `rotate(${reverbValue * 270 - 135}deg)`;
-          if (wetGain) wetGain.gain.value = reverbValue;
-        }
-      });
+      document
+        .getElementById("reverbToggle")
+        .addEventListener("click", async () => {
+          if (wetGain) {
+            if (!reverbActive) {
+              wetGain.gain.value = 1;
+              reverbActive = true;
+              document.getElementById("reverbToggle").classList.add("active");
+            } else {
+              wetGain.gain.value = 0;
+              reverbActive = false;
+              document
+                .getElementById("reverbToggle")
+                .classList.remove("active");
+            }
+          }
+        });
     </script>
   </body>
 </html>
