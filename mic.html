@@ -85,13 +85,15 @@
               // Get microphone input (disable aggressive filters)
               const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
+                  latency: 0,
                   echoCancellation: false,
                   noiseSuppression: false,
                   autoGainControl: false,
                 },
               });
               audioContext = new (window.AudioContext ||
-                window.webkitAudioContext)();
+                window.webkitAudioContext)({ latencyHint: "interactive" });
+
               const source = audioContext.createMediaStreamSource(stream);
 
               noiseGateNode = audioContext.createDynamicsCompressor();
