@@ -91,8 +91,9 @@
                   autoGainControl: false,
                 },
               });
-              audioContext = new (window.AudioContext ||
-                window.webkitAudioContext)({ latencyHint: "interactive" });
+              audioContext = new window.webkitAudioContext({
+                latencyHint: "interactive",
+              });
 
               const source = audioContext.createMediaStreamSource(stream);
 
