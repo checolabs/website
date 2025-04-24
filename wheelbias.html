@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wheel Bias</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        display: flex;
+        height: 100vh;
+      }
+      .left-panel {
+        width: 15%;
+        background-color: #f4f4f4;
+        text-align: center;
+        box-sizing: border-box;
+        overflow-y: auto;
+      }
+      .main-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+        box-sizing: border-box;
+      }
+      .roulette-wheel {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+      }
+      .wheel-number {
+        position: absolute;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+        transform-origin: center;
+        z-index: 99;
+      }
+      .wheel-circle {
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        border: 5px solid #333;
+        position: relative;
+      }
+      .roulette-grid {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-auto-rows: 50px;
+        gap: 4px;
+        margin-top: 1rem;
+      }
+      .ads {
+        height: 150px;
+        background-color: blue;
+      }
+      .number {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 1px solid #ccc;
+        font-weight: bold;
+        background-color: #eee;
+        transition: background-color 0.3s;
+      }
+      .ring {
+        position: absolute;
+        border: 1px dotted #888;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: -99;
+      }
+
+      .ring1 {
+        width: 400px;
+        height: 400px;
+        top: -50px;
+        left: -50px;
+      }
+
+      .ring2 {
+        width: 500px;
+        height: 500px;
+        top: -100px;
+        left: -100px;
+      }
+
+      .ring3 {
+        width: 600px;
+        height: 600px;
+        top: -150px;
+        left: -150px;
+      }
+
+      .ring4 {
+        width: 700px;
+        height: 700px;
+        top: -200px;
+        left: -200px;
+      }
+
+      .add-numbers {
+        text-align: center;
+        margin-bottom: 50px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="left-panel">
+      <h4>Past numbers:</h4>
+      <div id="history"></div>
+    </div>
+    <div class="main-panel">
+      <div class="ads">Ads</div>
+      <div class="add-numbers">
+        <h4>Add Numbers</h4>
+        <input type="text" id="numberInput" style="width: 50%" />
+        <button onclick="addNumber()">Add</button>
+        <br />
+        <span style="font-size: x-small"
+          >* add multiple numbers comma separated</span
+        >
+      </div>
+
+      <div class="roulette-wheel">
+        <div class="wheel-circle">
+          <div id="wheel"></div>
+          <div class="ring ring1"></div>
+          <div class="ring ring2"></div>
+          <div class="ring ring3"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const usRouletteWheelOrder = [
+        { number: "0", r: 0, g: 128, b: 0 }, // Green
+        { number: "28", r: 0, g: 0, b: 0 }, // Black
+        { number: "9", r: 255, g: 0, b: 0 }, // Red
+        { number: "26", r: 0, g: 0, b: 0 }, // Black
+        { number: "30", r: 255, g: 0, b: 0 }, // Red
+        { number: "11", r: 0, g: 0, b: 0 }, // Black
+        { number: "7", r: 255, g: 0, b: 0 }, // Red
+        { number: "20", r: 0, g: 0, b: 0 }, // Black
+        { number: "32", r: 255, g: 0, b: 0 }, // Red
+        { number: "17", r: 0, g: 0, b: 0 }, // Black
+        { number: "5", r: 255, g: 0, b: 0 }, // Red
+        { number: "22", r: 0, g: 0, b: 0 }, // Black
+        { number: "34", r: 255, g: 0, b: 0 }, // Red
+        { number: "15", r: 0, g: 0, b: 0 }, // Black
+        { number: "3", r: 255, g: 0, b: 0 }, // Red
+        { number: "24", r: 0, g: 0, b: 0 }, // Black
+        { number: "36", r: 255, g: 0, b: 0 }, // Red
+        { number: "13", r: 0, g: 0, b: 0 }, // Black
+        { number: "1", r: 255, g: 0, b: 0 }, // Red
+        { number: "00", r: 0, g: 128, b: 0 }, // Green
+        { number: "27", r: 255, g: 0, b: 0 }, // Red
+        { number: "10", r: 0, g: 0, b: 0 }, // Black
+        { number: "25", r: 255, g: 0, b: 0 }, // Red
+        { number: "29", r: 0, g: 0, b: 0 }, // Black
+        { number: "12", r: 255, g: 0, b: 0 }, // Red
+        { number: "8", r: 0, g: 0, b: 0 }, // Black
+        { number: "19", r: 255, g: 0, b: 0 }, // Red
+        { number: "31", r: 0, g: 0, b: 0 }, // Black
+        { number: "18", r: 255, g: 0, b: 0 }, // Red
+        { number: "6", r: 0, g: 0, b: 0 }, // Black
+        { number: "21", r: 255, g: 0, b: 0 }, // Red
+        { number: "33", r: 0, g: 0, b: 0 }, // Black
+        { number: "16", r: 255, g: 0, b: 0 }, // Red
+        { number: "4", r: 0, g: 0, b: 0 }, // Black
+        { number: "23", r: 255, g: 0, b: 0 }, // Red
+        { number: "35", r: 0, g: 0, b: 0 }, // Black
+        { number: "14", r: 255, g: 0, b: 0 }, // Red
+        { number: "2", r: 0, g: 0, b: 0 }, // Black
+      ];
+
+      const hitCounts = Array(usRouletteWheelOrder.length).fill(0);
+      const history = [];
+      const radius = 170;
+
+      function totalHits() {
+        return hitCounts.reduce((a, b) => a + b, 0);
+      }
+
+      function getIntensity(count) {
+        if (count === 0) return 0;
+        const ratio = count / totalHits();
+        return ratio * 0.9;
+      }
+
+      function renderWheel() {
+        const wheel = document.getElementById("wheel");
+        wheel.innerHTML = "";
+        for (let i = 0; i < usRouletteWheelOrder.length; i++) {
+          const el = document.createElement("div");
+          el.className = "wheel-number";
+          el.textContent = usRouletteWheelOrder[i].number;
+          const intesity = getIntensity(hitCounts[i]) * 0.5 + 0.3;
+          el.style.backgroundColor = `rgba(${usRouletteWheelOrder[i].r}, ${usRouletteWheelOrder[i].g}, ${usRouletteWheelOrder[i].b}, ${intesity})`;
+
+          const angle = ((2 * Math.PI) / usRouletteWheelOrder.length) * i;
+          const distance = hitCounts[i] * 5;
+
+          const x = Math.cos(angle) * (radius + distance) + 150 - 13; // 150 is center, 13 is half width
+          const y = Math.sin(angle) * (radius + distance) + 150 - 13;
+          el.style.left = `${x}px`;
+          el.style.top = `${y}px`;
+          el.style.transform = `rotate(${(angle * 180) / Math.PI + 90}deg)`;
+          wheel.appendChild(el);
+        }
+      }
+
+      function renderGrid() {
+        const grid = document.getElementById("grid");
+        grid.innerHTML = "";
+        // First add 0 and 00
+        ["0", "00"].forEach((label) => {
+          const el = document.createElement("div");
+          el.className = "number";
+          el.textContent = label;
+          el.style.gridColumn = "span 3"; // stretch across top
+          const index = label === "00" ? 37 : 0;
+          const item = usRouletteWheelOrder.find((i) => i.number === label);
+          const intesity =
+            getIntensity(hitCounts[usRouletteWheelOrder.indexOf(item)]) * 0.5 +
+            0.3;
+          el.style.backgroundColor = `rgba(${item.r}, ${item.g}, ${item.b}, ${intesity})`;
+          grid.appendChild(el);
+        });
+
+        for (let row = 0; row < 12; row++) {
+          for (let col = 0; col < 3; col++) {
+            const number = row * 3 + col + 1; // numbers from 1 to 36
+            const el = document.createElement("div");
+            el.className = "number";
+            el.textContent = number;
+            const item = usRouletteWheelOrder.find(
+              (i) => i.number === number.toString()
+            );
+            const intesity =
+              getIntensity(hitCounts[usRouletteWheelOrder.indexOf(item)]) *
+                0.5 +
+              0.3;
+            el.style.backgroundColor = `rgba(${item.r}, ${item.g}, ${item.b}, ${intesity})`;
+            grid.appendChild(el);
+          }
+        }
+      }
+
+      function addNumber() {
+        const input = document.getElementById("numberInput");
+
+        const values = input.value
+          .split(",")
+          .map((v) => v.trim())
+          .filter((v) => /^([0-9]{1,2}|00)$/.test(v)); // valid numbers including '00'
+
+        values.forEach((v) => {
+          if (!usRouletteWheelOrder.map((n) => n.number).includes(v)) {
+            return;
+          }
+          var numberAndColor = usRouletteWheelOrder.find((n) => n.number === v);
+
+          hitCounts[usRouletteWheelOrder.map((n) => n.number).indexOf(v)]++;
+          history.unshift(v);
+          const historyEl = document.getElementById("history");
+          const p = document.createElement("p");
+          p.textContent = v;
+          p.style.color = `rgb(${numberAndColor.r}, ${numberAndColor.g}, ${numberAndColor.b})`;
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.textContent = "x";
+          deleteBtn.style.marginLeft = "0.5rem";
+          deleteBtn.onclick = function () {
+            hitCounts[usRouletteWheelOrder.map((n) => n.number).indexOf(v)]--;
+            history.splice(history.indexOf(v), 1);
+            p.remove();
+            renderWheel();
+          };
+
+          p.appendChild(deleteBtn);
+
+          historyEl.prepend(p);
+        });
+
+        renderWheel();
+        input.value = "";
+      }
+
+      renderWheel();
+    </script>
+  </body>
+</html>
