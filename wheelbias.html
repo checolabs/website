@@ -9,12 +9,12 @@
     <title>Wheel Bias</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
     <style>
+      html {
+        overflow-x: hidden;
+      }
       body {
         margin: 0;
         font-family: Arial, sans-serif;
-        display: flex;
-        height: 100vh;
-        flex-direction: column;
         font-size: 16px;
       }
       .left-panel {
@@ -22,10 +22,10 @@
         background-color: #f4f4f4;
         text-align: center;
         box-sizing: border-box;
-        overflow-y: scroll;
+        min-height: 200px;
         order: 2;
         margin-top: 150px;
-        max-height: 200px;
+        padding-top: 10px;
       }
       .main-panel {
         flex: 1;
@@ -41,11 +41,6 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        margin-top: -80px;
-        margin-left: -80px;
       }
       .wheel-number {
         position: absolute;
@@ -66,6 +61,7 @@
         border-radius: 50%;
         border: 5px solid #333;
         position: relative;
+        transform: translate(0, 50%);
       }
       .roulette-grid {
         flex: 1;
@@ -119,47 +115,63 @@
 
       .add-numbers {
         text-align: center;
-        margin-bottom: 50px;
         margin-top: 20px;
       }
       @media (max-width: 768px) {
         .left-panel {
-          margin-top: 50px;
+          margin-top: 0px;
         }
       }
     </style>
   </head>
   <body>
     <div class="ads">Ads</div>
+
+    <div class="main-panel">
+      <div class="add-numbers">
+        <div style="width: 100%; text-align: center">
+          <div style="display: inline-block">
+            <input
+              type="text"
+              id="numberInput"
+              style="
+                width: 200px;
+                font-size: 20px;
+                float: left;
+                margin-right: 8px;
+              "
+              placeholder="ex. 21 , 5 , 16 ..."
+            />
+            <button
+              onclick="addNumber()"
+              style="height: 30px; font-size: 16px; float: left"
+            >
+              Add Numbers
+            </button>
+            <div style="clear: both"></div>
+            <div
+              style="font-size: x-small; margin-top: 0.5rem; text-align: left"
+            >
+              * add multiple numbers comma separated
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="height: 400px">
+        <div class="roulette-wheel">
+          <div class="wheel-circle">
+            <div id="wheel"></div>
+            <div class="ring ring1"></div>
+            <div class="ring ring2"></div>
+            <div class="ring ring3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="left-panel">
       <h4>Past numbers:</h4>
       <div id="history"></div>
     </div>
-    <div class="main-panel">
-      <div class="add-numbers">
-        <input
-          type="text"
-          id="numberInput"
-          style="width: 50%; font-size: 20px"
-          placeholder="ex. 21 , 5 , 16 ..."
-        />
-        <button onclick="addNumber()">Add Numbers</button>
-        <br />
-        <span style="font-size: x-small"
-          >* add multiple numbers comma separated</span
-        >
-      </div>
-
-      <div class="roulette-wheel">
-        <div class="wheel-circle">
-          <div id="wheel"></div>
-          <div class="ring ring1"></div>
-          <div class="ring ring2"></div>
-          <div class="ring ring3"></div>
-        </div>
-      </div>
-    </div>
-
     <script>
       const usRouletteWheelOrder = [
         { number: "0", r: 0, g: 128, b: 0 }, // Green
