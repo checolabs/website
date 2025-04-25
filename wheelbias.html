@@ -8,6 +8,12 @@
     />
     <title>Wheel Bias</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
     <style>
       html {
         overflow-x: hidden;
@@ -44,20 +50,20 @@
       }
       .wheel-number {
         position: absolute;
-        width: 16px;
-        height: 16px;
+        width: 20px;
+        height: 20px;
         border-radius: 50%;
         display: flex;
         justify-content: center;
         align-items: center;
-        font-weight: 200;
-        font-size: xx-small;
+        font-weight: bold;
+        font-size: x-small;
         transform-origin: center;
         z-index: 99;
       }
       .wheel-circle {
-        width: 150px;
-        height: 150px;
+        width: 160px;
+        height: 160px;
         border-radius: 50%;
         border: 5px solid #333;
         position: relative;
@@ -93,29 +99,33 @@
       }
 
       .ring1 {
-        width: 200px;
-        height: 200px;
-        top: -25px;
-        left: -25px;
-      }
-
-      .ring2 {
         width: 250px;
         height: 250px;
         top: -50px;
         left: -50px;
       }
 
-      .ring3 {
+      .ring2 {
         width: 300px;
         height: 300px;
         top: -75px;
         left: -75px;
       }
 
+      .ring1 {
+        width: 350px;
+        height: 350px;
+        top: -100px;
+        left: -100px;
+      }
+
       .add-numbers {
         text-align: center;
         margin-top: 20px;
+      }
+      .add-btn {
+        left: 10%;
+        width: 80%;
       }
       @media (max-width: 768px) {
         .left-panel {
@@ -129,35 +139,32 @@
 
     <div class="main-panel">
       <div class="add-numbers">
-        <div style="width: 100%; text-align: center">
-          <div style="display: inline-block">
-            <input
-              type="text"
-              id="numberInput"
-              style="
-                width: 200px;
-                font-size: 20px;
-                float: left;
-                margin-right: 8px;
-              "
-              placeholder="ex. 21 , 5 , 16 ..."
-            />
-            <button
-              onclick="addNumber()"
-              style="height: 30px; font-size: 16px; float: left"
-            >
-              Add Numbers
-            </button>
-            <div style="clear: both"></div>
-            <div
-              style="font-size: x-small; margin-top: 0.5rem; text-align: left"
-            >
-              * add multiple numbers comma separated
-            </div>
-          </div>
+        <div class="input-group add-btn">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="e.g. 21, 5, 16"
+            aria-label="Numbers"
+            aria-describedby="button-addon2"
+            id="numberInput"
+          />
+          <button
+            class="btn btn-outline-secondary"
+            type="button"
+            id="button-addon2"
+            onclick="addNumber()"
+          >
+            Add Numbers
+          </button>
+        </div>
+        <div
+          style="font-size: x-small; margin-top: 0.5rem; text-align: center"
+          class="mb-2"
+        >
+          * Separate numbers with commas (e.g. 21, 5, 16)
         </div>
       </div>
-      <div style="height: 400px">
+      <div style="height: 400px; margin-top: 20px">
         <div class="roulette-wheel">
           <div class="wheel-circle">
             <div id="wheel"></div>
@@ -216,7 +223,7 @@
 
       const hitCounts = Array(usRouletteWheelOrder.length).fill(0);
       const history = [];
-      const radius = 100;
+      const radius = 120;
 
       function totalHits() {
         return hitCounts.reduce((a, b) => a + b, 0);
@@ -241,8 +248,8 @@
           const angle = ((2 * Math.PI) / usRouletteWheelOrder.length) * i;
           const distance = hitCounts[i] * 5;
 
-          const x = Math.cos(angle) * (radius + distance) + 75 - 8; // 150 is center, 13 is half width
-          const y = Math.sin(angle) * (radius + distance) + 75 - 8;
+          const x = Math.cos(angle) * (radius + distance) + 75 - 10; // 150 is center, 10 is half width
+          const y = Math.sin(angle) * (radius + distance) + 75 - 10;
           el.style.left = `${x}px`;
           el.style.top = `${y}px`;
           el.style.transform = `rotate(${(angle * 180) / Math.PI + 90}deg)`;
