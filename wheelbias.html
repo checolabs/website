@@ -22,13 +22,15 @@
         margin: 0;
         font-family: Arial, sans-serif;
         font-size: 16px;
+        background-color: #003700;
+        color: whitesmoke;
       }
       .left-panel {
         width: 100%;
-        background-color: #f4f4f4;
+        background-color: #373737;
         text-align: center;
         box-sizing: border-box;
-        min-height: 200px;
+        min-height: 400px;
         order: 2;
         margin-top: 150px;
         padding-top: 10px;
@@ -65,7 +67,7 @@
         width: 160px;
         height: 160px;
         border-radius: 50%;
-        border: 5px solid #333;
+        border: 5px solid rgb(0, 0, 0);
         position: relative;
         transform: translate(0, 50%);
       }
@@ -79,7 +81,7 @@
       }
       .ads {
         height: 100px;
-        background-color: rgba(0, 0, 255, 0.301);
+        background-color: rgba(255, 136, 0, 0.301);
       }
       .number {
         display: flex;
@@ -92,31 +94,31 @@
       }
       .ring {
         position: absolute;
-        border: 1px dotted #888;
+        border: 1px solid black;
         border-radius: 50%;
         pointer-events: none;
         z-index: -99;
       }
 
       .ring1 {
-        width: 250px;
-        height: 250px;
-        top: -50px;
-        left: -50px;
+        width: 240px;
+        height: 240px;
+        top: -45px;
+        left: -45px;
       }
 
       .ring2 {
-        width: 300px;
-        height: 300px;
-        top: -75px;
-        left: -75px;
+        width: 290px;
+        height: 290px;
+        top: -70px;
+        left: -70px;
       }
 
-      .ring1 {
-        width: 350px;
-        height: 350px;
-        top: -100px;
-        left: -100px;
+      .ring3 {
+        width: 340px;
+        height: 340px;
+        top: -95px;
+        left: -95px;
       }
 
       .add-numbers {
@@ -149,7 +151,7 @@
             id="numberInput"
           />
           <button
-            class="btn btn-outline-secondary"
+            class="btn btn-outline-light"
             type="button"
             id="button-addon2"
             onclick="addNumber()"
@@ -257,43 +259,6 @@
         }
       }
 
-      function renderGrid() {
-        const grid = document.getElementById("grid");
-        grid.innerHTML = "";
-        // First add 0 and 00
-        ["0", "00"].forEach((label) => {
-          const el = document.createElement("div");
-          el.className = "number";
-          el.textContent = label;
-          el.style.gridColumn = "span 3"; // stretch across top
-          const index = label === "00" ? 37 : 0;
-          const item = usRouletteWheelOrder.find((i) => i.number === label);
-          const intesity =
-            getIntensity(hitCounts[usRouletteWheelOrder.indexOf(item)]) * 0.5 +
-            0.3;
-          el.style.backgroundColor = `rgba(${item.r}, ${item.g}, ${item.b}, ${intesity})`;
-          grid.appendChild(el);
-        });
-
-        for (let row = 0; row < 12; row++) {
-          for (let col = 0; col < 3; col++) {
-            const number = row * 3 + col + 1; // numbers from 1 to 36
-            const el = document.createElement("div");
-            el.className = "number";
-            el.textContent = number;
-            const item = usRouletteWheelOrder.find(
-              (i) => i.number === number.toString()
-            );
-            const intesity =
-              getIntensity(hitCounts[usRouletteWheelOrder.indexOf(item)]) *
-                0.5 +
-              0.3;
-            el.style.backgroundColor = `rgba(${item.r}, ${item.g}, ${item.b}, ${intesity})`;
-            grid.appendChild(el);
-          }
-        }
-      }
-
       function addNumber() {
         const input = document.getElementById("numberInput");
 
@@ -318,6 +283,10 @@
           const deleteBtn = document.createElement("button");
           deleteBtn.textContent = "x";
           deleteBtn.style.marginLeft = "0.5rem";
+          deleteBtn.classList.add("btn");
+          deleteBtn.classList.add("btn-outline-danger");
+          deleteBtn.classList.add("btn-sm");
+
           deleteBtn.onclick = function () {
             hitCounts[usRouletteWheelOrder.map((n) => n.number).indexOf(v)]--;
             history.splice(history.indexOf(v), 1);
