@@ -11,42 +11,54 @@
         font-family: Arial, sans-serif;
         display: flex;
         height: 100vh;
+        flex-direction: column;
       }
       .left-panel {
-        width: 15%;
+        width: 100%;
         background-color: #f4f4f4;
         text-align: center;
         box-sizing: border-box;
-        overflow-y: auto;
+        overflow-y: scroll;
+        order: 2;
+        margin-top: 150px;
+        max-height: 200px;
       }
       .main-panel {
         flex: 1;
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
+        width: 100%;
+        order: 1;
       }
+
       .roulette-wheel {
         flex: 1;
         display: flex;
         justify-content: center;
         align-items: center;
-        position: relative;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        margin-top: -160px;
+        margin-left: -80px;
       }
       .wheel-number {
         position: absolute;
-        width: 26px;
-        height: 26px;
+        width: 16px;
+        height: 16px;
         border-radius: 50%;
         display: flex;
         justify-content: center;
         align-items: center;
-        font-weight: bold;
+        font-weight: 200;
+        font-size: xx-small;
         transform-origin: center;
         z-index: 99;
       }
       .wheel-circle {
-        width: 300px;
-        height: 300px;
+        width: 150px;
+        height: 150px;
         border-radius: 50%;
         border: 5px solid #333;
         position: relative;
@@ -61,7 +73,7 @@
       }
       .ads {
         height: 100px;
-        background-color: blue;
+        background-color: rgba(0, 0, 255, 0.301);
       }
       .number {
         display: flex;
@@ -81,109 +93,53 @@
       }
 
       .ring1 {
-        width: 400px;
-        height: 400px;
+        width: 200px;
+        height: 200px;
+        top: -25px;
+        left: -25px;
+      }
+
+      .ring2 {
+        width: 250px;
+        height: 250px;
         top: -50px;
         left: -50px;
       }
 
-      .ring2 {
-        width: 500px;
-        height: 500px;
-        top: -100px;
-        left: -100px;
-      }
-
       .ring3 {
-        width: 600px;
-        height: 600px;
-        top: -150px;
-        left: -150px;
-      }
-
-      .ring4 {
-        width: 700px;
-        height: 700px;
-        top: -200px;
-        left: -200px;
+        width: 300px;
+        height: 300px;
+        top: -75px;
+        left: -75px;
       }
 
       .add-numbers {
         text-align: center;
         margin-bottom: 50px;
+        margin-top: 20px;
       }
-
       @media (max-width: 768px) {
-        body {
-          flex-direction: column;
-        }
         .left-panel {
-          width: 100%;
-          order: 2;
-          overflow-y: visible;
-          margin-top: 150px;
-        }
-        .main-panel {
-          width: 100%;
-          order: 1;
-        }
-        .wheel-circle {
-          width: 150px;
-          height: 150px;
-          border-radius: 50%;
-          border: 5px solid #333;
-          position: relative;
-        }
-        .wheel-number {
-          position: absolute;
-          width: 13px;
-          height: 13px;
-          border-radius: 50%;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          font-weight: 200;
-          font-size: xx-small;
-          transform-origin: center;
-          z-index: 99;
-        }
-        .ring1 {
-          width: 200px;
-          height: 200px;
-          top: -25px;
-          left: -25px;
-        }
-
-        .ring2 {
-          width: 250px;
-          height: 250px;
-          top: -50px;
-          left: -50px;
-        }
-
-        .ring3 {
-          width: 300px;
-          height: 300px;
-          top: -75px;
-          left: -75px;
-        }
-        .add-numbers {
-          margin-bottom: 100px;
+          margin-top: 50px;
         }
       }
     </style>
   </head>
   <body>
+    <div class="ads">Ads</div>
     <div class="left-panel">
       <h4>Past numbers:</h4>
       <div id="history"></div>
     </div>
     <div class="main-panel">
-      <div class="ads">Ads</div>
       <div class="add-numbers">
-        <h4>Add Numbers</h4>
-        <input type="text" id="numberInput" style="width: 50%" />
-        <button onclick="addNumber()">Add</button>
+        <input
+          type="text"
+          id="numberInput"
+          style="width: 50%"
+          placeholder="ex. 21 , 5 , 16 ..."
+        />
+        <button onclick="addNumber()">Add Numbers</button>
         <br />
         <span style="font-size: x-small"
           >* add multiple numbers comma separated</span
@@ -263,14 +219,14 @@
           const el = document.createElement("div");
           el.className = "wheel-number";
           el.textContent = usRouletteWheelOrder[i].number;
-          const intesity = getIntensity(hitCounts[i]) * 0.5 + 0.3;
-          el.style.backgroundColor = `rgba(${usRouletteWheelOrder[i].r}, ${usRouletteWheelOrder[i].g}, ${usRouletteWheelOrder[i].b}, ${intesity})`;
+          el.style.backgroundColor = `rgb(${usRouletteWheelOrder[i].r}, ${usRouletteWheelOrder[i].g}, ${usRouletteWheelOrder[i].b})`;
+          el.style.color = "white";
 
           const angle = ((2 * Math.PI) / usRouletteWheelOrder.length) * i;
           const distance = hitCounts[i] * 5;
 
-          const x = Math.cos(angle) * (radius + distance) + 75 - 7.5; // 150 is center, 13 is half width
-          const y = Math.sin(angle) * (radius + distance) + 75 - 7.5;
+          const x = Math.cos(angle) * (radius + distance) + 75 - 8; // 150 is center, 13 is half width
+          const y = Math.sin(angle) * (radius + distance) + 75 - 8;
           el.style.left = `${x}px`;
           el.style.top = `${y}px`;
           el.style.transform = `rotate(${(angle * 180) / Math.PI + 90}deg)`;
